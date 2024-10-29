@@ -53,8 +53,8 @@ Make sure you have the following installed:
    Example `.env`:
    ```plaintext
    # .env file
-   OLLAMA_API_KEY=your_ollama_api_key
-   LLAMA_INDEX_PATH=path/to/index/directory
+   LLM=your_llm
+   LLM_SERVER = "http://localhost:8080"
    ```
 
 3. **Install Dependencies** (if running locally without Docker):
@@ -66,19 +66,10 @@ Make sure you have the following installed:
 
 ### Running the Application with Docker
 
-1. **Build the Docker Image**:
-   ```bash
-   docker build -t document-indexing-chatbot .
-   ```
-
 2. **Run the Docker Container**:
+   Docker Compose:
    ```bash
-   docker run -p 5000:5000 --env-file .env document-indexing-chatbot
-   ```
-
-   Or, if using Docker Compose:
-   ```bash
-   docker-compose up --build
+   docker-compose up -d
    ```
 
 3. **Access the Application**:
@@ -95,6 +86,9 @@ Make sure you have the following installed:
 
 2. **Check Indexing Status**:
    - Once indexing is complete, the progress bar will reach 100%, and a message will display indicating that indexing is complete.
+
+3. **Chat**:
+   - You can now use the indexed documents in the chatbot at `/chat` or other application that requires indexed data.
 
 ---
 

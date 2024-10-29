@@ -2,10 +2,26 @@ version: '3.8'
 
 services:
   chatbot:
+    container_name: katIA
     build: .
     ports:
-      - "5000:5000"
+      - '8071:8071'
     env_file:
       - .env
     volumes:
       - .:/app
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_LLM: $LLM  # Language model to use
+      OLLAMA_URL: $LLM_SERVER  # Endpoint URL for Ollama service
+      PORT: $PORT  # Port for the chatbot service
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11435:11434"
+    env_file:
+      - .env
+    environment:
+      MODEL: $LLM

@@ -6,13 +6,17 @@ WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
+
+# Copy apt requirements
+COPY apt_packages.txt /tmp/apt_packages.txt
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the src directory into the container
 COPY src/ .
 
 # Expose port 5000
-EXPOSE 5000
+EXPOSE 8071
 
 # Command to run the application
-CMD ["python", "app.py"]
+CMD ["python3", "src/app.py"]
