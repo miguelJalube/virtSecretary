@@ -16,12 +16,24 @@ services:
       OLLAMA_LLM: $LLM  # Language model to use
       OLLAMA_URL: $LLM_SERVER  # Endpoint URL for Ollama service
       PORT: $PORT  # Port for the chatbot service
+    networks:
+      - ollama-network
 
   ollama:
+    container_name : ollama
     image: ollama/ollama:latest
     ports:
       - "11435:11434"
     env_file:
       - .env
+    entrypoint: ["/entrypoint.sh"]
+    volumes:
+      - ./entrypoint.sh:/entrypoint.sh
     environment:
       MODEL: $LLM
+    networks:
+      - ollama-network
+
+networks:
+  ollama-network:
+    driver: bridge

@@ -7,13 +7,20 @@ from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core.memory import ChatMemoryBuffer
+
+import logging
 
 from llama_index.core import (
     load_index_from_storage,
     StorageContext,
 )
 
+# Set up logging
+logger = logging.getLogger(__name__)
+
 LLM = os.environ.get("LLM", "llama3.2:1b")
+LLM_SERVER = os.environ.get("LLM_SERVER", "http://ollama:11434")
 PORT = os.environ.get("PORT", 8071)
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-large")
 
@@ -47,7 +54,7 @@ def index():
 def chat():
     # rebuild storage context
     storage_context = StorageContext.from_defaults(
-        persist_dir="storage"
+        persist_dir="src/storage"
     )
     
     try:
@@ -62,7 +69,15 @@ def chat():
     
     data = request.get_json()
     
-    query_engine = index.as_chat_engine(llm=Settings.llm ,chat_mode="context")
+    memory = ChatMemoryBuffer.from_defaults(token_limit=1500)
+    
+    query_engine = index.as_chat_engine(
+        chat_mode="context",
+        memory = memory,
+        
+    )
+    logger.warning("Data : " + str(data["query"]))
+    
     response = query_engine.chat(data["query"])
     
     # Use LlamaIndex to get a response
@@ -76,7 +91,7 @@ def home():
 
 if __name__ == "__main__":
     # Initialize LlamaIndex
-    Settings.llm = Ollama(model=LLM, request_timeout=240)
+    Settings.llm = Ollama(base_url=LLM_SERVER, model=LLM, request_timeout=240)
     
     # Embedding model
     Settings.embed_model = HuggingFaceEmbedding(
