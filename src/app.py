@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, stream_with_context, Response
 
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -71,17 +71,16 @@ def chat():
     
     memory = ChatMemoryBuffer.from_defaults(token_limit=1500)
     
-    query_engine = index.as_chat_engine(
+    chat_engine = index.as_chat_engine(
         chat_mode="context",
-        memory = memory,
-        
+        memory = memory
     )
     logger.warning("Data : " + str(data["query"]))
     
-    response = query_engine.chat(data["query"])
+    streaming_response = chat_engine.stream_chat(data["query"])
     
-    # Use LlamaIndex to get a response
-    return jsonify({"response": response.response})
+    # Use LlamaIndex to stream a response
+    return Response(stream_with_context(streaming_response.response_gen), content_type="application/json")
 
 # Home route to serve the frontend interface
 @app.route("/")
@@ -90,8 +89,13 @@ def home():
     return render_template("index.html")
 
 if __name__ == "__main__":
+    
+    # Get system prompt from prompts/system_prompt
+    with open("src/prompts/system_prompt", "r") as f:
+        system_prompt = f.read()
+    
     # Initialize LlamaIndex
-    Settings.llm = Ollama(base_url=LLM_SERVER, model=LLM, request_timeout=240)
+    Settings.llm = Ollama(base_url=LLM_SERVER, model=LLM, request_timeout=240, system_prompt=system_prompt)
     
     # Embedding model
     Settings.embed_model = HuggingFaceEmbedding(

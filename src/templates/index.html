@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="chat-container">
-        <h1>Chatbot LlamaIndex</h1>
+        <h1>Virtual Secretary</h1>
         <div id="chat-box"></div>
         <input type="text" id="user-input" placeholder="Type your question...">
         <button onclick="sendMessage()">Send</button>
@@ -18,21 +18,40 @@
         async function sendMessage() {
             const userInput = document.getElementById("user-input").value;
             if (!userInput) return;
-            
+
             // Display user's question in the chat box
-            document.getElementById("chat-box").innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
             document.getElementById("user-input").value = "";
 
-            // Send request to the Flask API
+            // Create an entry for the chatbot response
+            const botResponse = document.createElement("p");
+            botResponse.innerHTML = "<strong>KatIA:</strong> ";
+            chatBox.appendChild(botResponse);
+
+            // Send the query to the Flask API
             const response = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: userInput })
+                body: JSON.stringify({ query: userInput }),
             });
-            const data = await response.json();
 
-            // Display chatbot response in the chat box
-            document.getElementById("chat-box").innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
+            // Process the streamed response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            // Read the streamed chunks
+            let done = false;
+            while (!done) {
+                const { value, done: streamDone } = await reader.read();
+                done = streamDone;
+
+                if (value) {
+                    // Decode the received chunk and append it to the bot's response
+                    const chunk = decoder.decode(value, { stream: true });
+                    botResponse.innerHTML += chunk;
+                }
+            }
         }
     </script>
 </body>
