@@ -121,7 +121,7 @@
     
             // Afficher la question de l'utilisateur dans la boîte de chat
             const chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+            chatBox.innerHTML += `<p style="text-align:right;"><strong>You:</strong> ${userInput}</p>`;
             chatBox.scrollTop = chatBox.scrollHeight; // Scroll au bas
             document.getElementById("user-input").value = "";
     
@@ -148,12 +148,18 @@
                 done = streamDone;
     
                 if (value) {
-                    // Décoder le morceau reçu et l'ajouter à la réponse du bot
+                    // Décoder le morceau reçu et ajouter au botResponse
                     const chunk = decoder.decode(value, { stream: true });
-                    botResponse.innerHTML += chunk;
+                    const formattedChunk = formatMarkdown(chunk);
+                    botResponse.innerHTML += formattedChunk;
                     chatBox.scrollTop = chatBox.scrollHeight; // Continuer à faire défiler
                 }
             }
+        }
+    
+        // Fonction pour formater le Markdown basique
+        function formatMarkdown(text) {
+            return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         }
     
         // Fonction pour détecter la touche "Enter"
@@ -163,6 +169,6 @@
                 sendMessage(); // Appeler la fonction d'envoi
             }
         });
-    </script>    
+    </script>        
 </body>
 </html>
