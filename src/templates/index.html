@@ -3,56 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot LlamaIndex</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>KatIA - Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            background-color: #ffffff;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            background-color: #0078d7;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 15px;
+            font-size: 1.5rem;
+        }
+
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f4f4f4;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #chat-box p {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 75%;
+        }
+
+        #chat-box p strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        #chat-box p:nth-child(odd) {
+            background-color: #e6f7ff;
+            align-self: flex-start;
+        }
+
+        #chat-box p:nth-child(even) {
+            background-color: #daf6d6;
+            align-self: flex-end;
+        }
+
+        #user-input {
+            width: 100%;
+            border: none;
+            padding: 15px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        button {
+            background-color: #0078d7;
+            color: #ffffff;
+            border: none;
+            padding: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        .input-container {
+            display: flex;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-container input {
+            flex: 1;
+        }
+
+        .input-container button {
+            flex: 0;
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
-        <h1>Virtual Secretary</h1>
+        <h1>KatIA</h1>
         <div id="chat-box"></div>
-        <input type="text" id="user-input" placeholder="Type your question...">
-        <button onclick="sendMessage()">Send</button>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type your question...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-    
+
     <script>
+        // Fonction pour gérer l'envoi du message
         async function sendMessage() {
             const userInput = document.getElementById("user-input").value;
             if (!userInput) return;
-
-            // Display user's question in the chat box
+    
+            // Afficher la question de l'utilisateur dans la boîte de chat
             const chatBox = document.getElementById("chat-box");
             chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll au bas
             document.getElementById("user-input").value = "";
-
-            // Create an entry for the chatbot response
+    
+            // Créer un conteneur pour la réponse du bot
             const botResponse = document.createElement("p");
             botResponse.innerHTML = "<strong>KatIA:</strong> ";
             chatBox.appendChild(botResponse);
-
-            // Send the query to the Flask API
+    
+            // Envoyer la requête à l'API Flask
             const response = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ query: userInput }),
             });
-
-            // Process the streamed response
+    
+            // Traiter la réponse en flux
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
-
-            // Read the streamed chunks
+    
+            // Lire les morceaux de données
             let done = false;
             while (!done) {
                 const { value, done: streamDone } = await reader.read();
                 done = streamDone;
-
+    
                 if (value) {
-                    // Decode the received chunk and append it to the bot's response
+                    // Décoder le morceau reçu et l'ajouter à la réponse du bot
                     const chunk = decoder.decode(value, { stream: true });
                     botResponse.innerHTML += chunk;
+                    chatBox.scrollTop = chatBox.scrollHeight; // Continuer à faire défiler
                 }
             }
         }
-    </script>
+    
+        // Fonction pour détecter la touche "Enter"
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Empêche le comportement par défaut (par ex. saut de ligne)
+                sendMessage(); // Appeler la fonction d'envoi
+            }
+        });
+    </script>    
 </body>
 </html>

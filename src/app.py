@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from flask import Flask, request, jsonify, render_template, stream_with_context, Response
+from flask import Flask, redirect, request, jsonify, render_template, stream_with_context, Response
 
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -36,7 +36,7 @@ def index():
     logging.warning(os.listdir())
     
     
-    reader = SimpleDirectoryReader(input_dir="src/knowledge")
+    reader = SimpleDirectoryReader(input_dir="src/knowledge", recursive=True)
     documents = reader.load_data()
     
     index = VectorStoreIndex.from_documents(
@@ -69,7 +69,7 @@ def chat():
     
     data = request.get_json()
     
-    memory = ChatMemoryBuffer.from_defaults(token_limit=1500)
+    memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
     
     chat_engine = index.as_chat_engine(
         chat_mode="context",
@@ -86,12 +86,16 @@ def chat():
 @app.route("/")
 def home():
     logging.info("Rendering home page")
+    
+    # redirect to chat page with a query "presente toi"
+    #return redirect("/chat?query=presente%20toi")
+    
     return render_template("index.html")
 
 if __name__ == "__main__":
     
     # Get system prompt from prompts/system_prompt
-    with open("src/prompts/system_prompt", "r") as f:
+    with open("src/prompts/system_prompt.txt", "r") as f:
         system_prompt = f.read()
     
     # Initialize LlamaIndex
