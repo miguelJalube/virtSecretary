@@ -1,8 +1,15 @@
 import os
 import sys
 import logging
-from flask import Flask, redirect, request, jsonify, render_template, stream_with_context, Response
-
+from flask import (
+    Flask, 
+    redirect, 
+    request, 
+    jsonify, 
+    render_template, 
+    stream_with_context, 
+    Response
+)
 from llama_index.core import (
     Settings,
     VectorStoreIndex,
@@ -10,9 +17,11 @@ from llama_index.core import (
     load_index_from_storage,
     StorageContext,
 )
+from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.memory import ChatMemoryBuffer
+from sqlalchemy import make_url
 
 
 import logging
@@ -26,6 +35,11 @@ LLM_PORT =              os.environ.get("LLM_PORT", "11434")
 PORT =                  os.environ.get("PORT", 8071)
 LLAMA_CLOUD_API_KEY =   os.environ.get("LLAMA_CLOUD_API_KEY", "llama_cloud_api_key")
 EMBED_MODEL =           os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-large")
+PG_USER =               os.environ.get("PG_USER", "postgres")
+PG_PASSWORD =           os.environ.get("PG_PASSWORD", "password")
+PG_HOST =               os.environ.get("PG_HOST", "katia_pgvector")
+PG_PORT =               os.environ.get("PG_PORT", 5432)
+PG_DB =                 os.environ.get("PG_DB", "katia_db")
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -58,13 +72,30 @@ def index():
         #file_extractor=file_extractor
     ).load_data()
     
-    index = VectorStoreIndex.from_documents(
-        documents, show_progress=True, 
+    url = make_url(connection_string)
+    vector_store = PGVectorStore.from_params(
+        database=db_name,
+        host=url.host,
+        password=url.password,
+        port=url.port,
+        user=url.username,
+        table_name="vector_store",
+        embed_dim=1024,  # openai embedding dimension
+        hnsw_kwargs={
+            "hnsw_m": 16,
+            "hnsw_ef_construction": 64,
+            "hnsw_ef_search": 40,
+            "hnsw_dist_method": "vector_cosine_ops"
+        },
+    )
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    
+    index_base = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context, show_progress=True, 
     )
     
-    # save index to disk
-    index.set_index_id("vector_index")
-    index.storage_context.persist("src/storage")
+    chat_engine = index_base.as_chat_engine()
     
     return jsonify({"message": "Indexing complete"})
 
@@ -92,16 +123,15 @@ if __name__ == "__main__":
     
     # Get system prompt from prompts/system_prompt
     with open("src/prompts/system_prompt.txt", "r") as f:
-        system_prompt = f.read()
-    
-    logger.warning("LLM Server : " + LLM_SERVER)
-    
-    url = f"http://{LLM_SERVER}:{LLM_PORT}"
+        system_prompt = f.read()    
     
     # Initialize LlamaIndex
-    Settings.llm = Ollama(base_url=url, model=LLM, request_timeout=240, system_prompt=system_prompt)
-    
-    logger.warning("LLM ok")
+    Settings.llm = Ollama(
+        base_url=f"http://{LLM_SERVER}:{LLM_PORT}",
+        model=LLM, 
+        request_timeout=240, 
+        system_prompt=system_prompt
+    )
     
     # Embedding model
     Settings.embed_model = HuggingFaceEmbedding(
@@ -109,19 +139,41 @@ if __name__ == "__main__":
         trust_remote_code=True,
         cache_folder="cache"
     )
+
+    logger.warning("PG_HOST : " + str(PG_HOST))
+    logger.warning("PG_PORT : " + str(PG_PORT))
+    logger.warning("PG_USER : " + str(PG_USER))
+    logger.warning("PG_PASSWORD : " + str(PG_PASSWORD))
     
-    logger.warning("Embedding model ok")
+    # rebuild storage context from local storage
+    #storage_context = StorageContext.from_defaults(
+    #    persist_dir="src/storage"
+    #)
     
-    # rebuild storage context
-    storage_context = StorageContext.from_defaults(
-        persist_dir="src/storage"
+    connection_string = "postgresql://"+str(PG_USER)+":"+str(PG_PASSWORD)+"@"+str(PG_HOST)+":"+str(PG_PORT)
+    db_name = PG_DB
+    
+    url = make_url(connection_string)
+    vector_store = PGVectorStore.from_params(
+        database=db_name,
+        host=url.host,
+        password=url.password,
+        port=url.port,
+        user=url.username,
+        table_name="vector_store",
+        embed_dim=1024,  # openai embedding dimension
+        hnsw_kwargs={
+            "hnsw_m": 16,
+            "hnsw_ef_construction": 64,
+            "hnsw_ef_search": 40,
+            "hnsw_dist_method": "vector_cosine_ops"
+        },
     )
     
     try:
-        # load index
-        index = load_index_from_storage(
-            storage_context,
-            index_id="vector_index"
+        # load index_base
+        index_base = VectorStoreIndex.from_vector_store(
+            vector_store=vector_store
         )
     except Exception as e:
         message = f"Error loading index: {str(e)}"
@@ -129,7 +181,7 @@ if __name__ == "__main__":
     
     memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
     
-    chat_engine = index.as_chat_engine(
+    chat_engine = index_base.as_chat_engine(
         chat_mode="context",
         memory = memory
     )
