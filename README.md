@@ -37,6 +37,10 @@ Make sure you have the following installed:
 - **Docker Compose** (optional, for managing multi-container applications)
 - **Python 3.9+** (if running locally without Docker)
 
+Make sure you have the following API keys:
+- **Llama cloud API key**
+
+Make sure you have access to LLM model and server. You can setup your own ollama server.
 ---
 
 ### Setup and Installation
@@ -48,13 +52,16 @@ Make sure you have the following installed:
    ```
 
 2. **Environment Variables**:
-   Create a `.env` file at the root level of the project. Include any required configurations for your Ollama or LlamaIndex API keys.
+   Create a `.env` file at the root level of the project. Include any required configurations for API keys.
 
    Example `.env`:
    ```plaintext
    # .env file
-   LLM=your_llm
-   LLM_SERVER = "http://localhost:8080"
+   LLM=[llm model]
+   LLM_SERVER =[llm server]
+   LLAMA_CLOUD_API_KEY=[llama cloud api key]
+   EMBED_MODEL = "intfloat/multilingual-e5-large"
+   PORT = 8071
    ```
 
 3. **Install Dependencies** (if running locally without Docker):
@@ -73,7 +80,8 @@ Make sure you have the following installed:
    ```
 
 3. **Access the Application**:
-   Open your browser and go to `http://localhost:5000/index` to access the document indexing interface.
+   Open your browser and go to `http://localhost:8071/index` to access the document indexing interface.
+   Then `http://localhost:8071/chat` to access the chatbot interface.
 
 ---
 

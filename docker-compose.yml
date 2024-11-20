@@ -5,35 +5,15 @@ services:
     container_name: katIA
     build: .
     ports:
-      - '8071:8071'
+      - '$PORT:$PORT'
     env_file:
       - .env
     volumes:
       - .:/app
-    depends_on:
-      - ollama
     environment:
-      OLLAMA_LLM: $LLM  # Language model to use
-      OLLAMA_URL: $LLM_SERVER  # Endpoint URL for Ollama service
-      PORT: $PORT  # Port for the chatbot service
-    networks:
-      - ollama-network
-
-  ollama:
-    container_name : ollama
-    image: ollama/ollama:latest
-    ports:
-      - "11435:11434"
-    env_file:
-      - .env
-    entrypoint: ["/entrypoint.sh"]
-    volumes:
-      - ./entrypoint.sh:/entrypoint.sh
-    environment:
-      MODEL: $LLM
-    networks:
-      - ollama-network
-
-networks:
-  ollama-network:
-    driver: bridge
+      LLM: $LLM                             # Language model to use
+      LLM_SERVER: $LLM_SERVER               # Endpoint URL for the llm service
+      LLM_PORT : $LLM_PORT                  # Port for the the llm service
+      PORT: $PORT                           # Port for the frontend
+    extra_hosts:
+      - "$LLM_SERVER:host-gateway"          # ONLY if running ollama locally

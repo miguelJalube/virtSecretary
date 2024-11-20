@@ -20,10 +20,12 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
-LLM =           os.environ.get("LLM", "llama3.2:1b")
-LLM_SERVER =    os.environ.get("LLM_SERVER", "http://ollama:11434")
-PORT =          os.environ.get("PORT", 8071)
-EMBED_MODEL =   os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-large")
+LLM =                   os.environ.get("LLM", "llama3.2:3b")
+LLM_SERVER =            os.environ.get("LLM_SERVER", "host.docker.internal")
+LLM_PORT =              os.environ.get("LLM_PORT", "11434")
+PORT =                  os.environ.get("PORT", 8071)
+LLAMA_CLOUD_API_KEY =   os.environ.get("LLAMA_CLOUD_API_KEY", "llama_cloud_api_key")
+EMBED_MODEL =           os.environ.get("EMBED_MODEL", "intfloat/multilingual-e5-large")
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -33,13 +35,28 @@ chat_engine = None
 # Index the data
 @app.route("/index")
 def index():
+    # bring in deps
+    from llama_parse import LlamaParse
+    
     # print content of current dir
     logging.warning("List dir : ")
     logging.warning(os.listdir())
     
-    
-    reader = SimpleDirectoryReader(input_dir="src/knowledge", recursive=True)
-    documents = reader.load_data()
+    # set up parser
+    parser = LlamaParse(
+        result_type="markdown",
+        api_key=LLAMA_CLOUD_API_KEY,
+        
+    )
+
+    # use SimpleDirectoryReader to parse our file
+    file_extractor = {".pdf": parser}
+
+    documents = SimpleDirectoryReader(
+        input_dir="src/knowledge", 
+        recursive=True, 
+        #file_extractor=file_extractor
+    ).load_data()
     
     index = VectorStoreIndex.from_documents(
         documents, show_progress=True, 
@@ -77,8 +94,12 @@ if __name__ == "__main__":
     with open("src/prompts/system_prompt.txt", "r") as f:
         system_prompt = f.read()
     
+    logger.warning("LLM Server : " + LLM_SERVER)
+    
+    url = f"http://{LLM_SERVER}:{LLM_PORT}"
+    
     # Initialize LlamaIndex
-    Settings.llm = Ollama(base_url=LLM_SERVER, model=LLM, request_timeout=240, system_prompt=system_prompt)
+    Settings.llm = Ollama(base_url=url, model=LLM, request_timeout=240, system_prompt=system_prompt)
     
     # Embedding model
     Settings.embed_model = HuggingFaceEmbedding(
