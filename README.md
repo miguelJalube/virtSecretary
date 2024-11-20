@@ -14,18 +14,30 @@ This application allows users to upload documents for indexing, which is used in
 ### Project Structure
 
 ```
-chatbot_project/
-├── Dockerfile                   # Dockerfile for building the container
-├── docker-compose.yml           # Optional: Docker Compose file
-├── .env                         # Environment file (for secret configurations)
-├── requirements.txt             # Dependencies for the project
-├── README.md                    # Project documentation
-├── src/
-│   ├── app.py                   # Flask application code
-│   ├── templates/
-│   │   └── index.html           # HTML template for the /index page
-│   └── static/
-│       └── style.css            # CSS styling for the progress bar and layout
+project/
+├── docker-compose.yml                       # Docker Compose file
+├── .env.example                             # Environment file (for configurations)
+├── .gitignore                               # Files and directories to ignore in Git
+├── README.md                                # Project documentation
+├── LICENSE.md                               # License information
+├── chatbot/
+|   ├── Dockerfile                           # Dockerfile for building the container
+|   ├── requrements.txt                      # Dependencies for the chatbot
+|   └── src/         
+|       ├── .gitignore                       # Files and directories to ignore in Git
+|       ├── app.py                           # Flask application code
+|       ├── knowledge/                       # Knowledge base for the chatbot
+|       ├── prompts/
+|       |   └── system_prompt.txt.example    # Example system prompt for chatbot
+|       ├── storage/                         # Storage for indexed documents
+|       ├── templates/
+|       │   └── index.html                   # HTML template for the /index page
+|       └── static/        
+|           └── style.css                    # CSS styling for the progress bar and layout
+└── pgvector/        
+    ├── Dockerfile                           # Dockerfile for building the container
+    ├── init.sql                             # SQL script for initializing the database
+    └── install-pgvector.sh                  # Script for installing pgvector extension
 ```
 
 ---
@@ -55,17 +67,7 @@ OLLAMA_HOST=0.0.0.0:11435 OLLAMA_MODELS=/usr/share/ollama/.ollama/models/ ollama
    ```
 
 2. **Environment Variables**:
-   Create a `.env` file at the root level of the project. Include any required configurations for API keys.
-
-   Example `.env`:
-   ```plaintext
-   # .env file
-   LLM=[llm model]
-   LLM_SERVER =[llm server]
-   LLAMA_CLOUD_API_KEY=[llama cloud api key]
-   EMBED_MODEL = "intfloat/multilingual-e5-large"
-   PORT = 8071
-   ```
+   copy the content of `.env.example` to a new file `.env` and fill in the required values.
 
 3. **Install Dependencies** (if running locally without Docker):
    ```bash
@@ -79,7 +81,7 @@ OLLAMA_HOST=0.0.0.0:11435 OLLAMA_MODELS=/usr/share/ollama/.ollama/models/ ollama
 2. **Run the Docker Container**:
    Docker Compose:
    ```bash
-   docker-compose up -d
+   docker-compose up --build
    ```
 
 3. **Access the Application**:
