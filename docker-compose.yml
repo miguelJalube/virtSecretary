@@ -3,17 +3,46 @@ version: '3.8'
 services:
   chatbot:
     container_name: katIA
-    build: .
+    build: 
+      context: ./chatbot
     ports:
       - '$PORT:$PORT'
     env_file:
       - .env
     volumes:
-      - .:/app
+      - ./chatbot:/app
     environment:
       LLM: $LLM                             # Language model to use
       LLM_SERVER: $LLM_SERVER               # Endpoint URL for the llm service
-      LLM_PORT : $LLM_PORT                  # Port for the the llm service
+      LLM_PORT: $LLM_PORT                   # Port for the the llm service
       PORT: $PORT                           # Port for the frontend
+      PG_HOST: $PG_HOST            # Hostname of the PostgreSQL service
+      PG_PORT: $PG_PORT                         # PostgreSQL port
+      PG_USER: $PG_USER                    # PostgreSQL user
+      PG_PASSWORD: $PG_PASSWORD            # PostgreSQL password
+      PG_DB: $PG_DB                  # PostgreSQL database
     extra_hosts:
       - "$LLM_SERVER:host-gateway"          # ONLY if running ollama locally
+#
+#  postgres:
+#    container_name: postgres_pgvector
+#    image: postgres:15                     # Utilise directement l'image officielle de PostgreSQL
+#    environment:
+#      POSTGRES_USER: $PG_USER
+#      POSTGRES_PASSWORD: $PG_PASSWORD
+#      POSTGRES_DB: $PG_DB
+#    ports:
+#      - "$PG_PORT:$PG_PORT"
+#    volumes:
+#      - pgdata:/var/lib/postgresql/data
+#      - ./pgvector/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # Script pour activer pgvector
+#      - ./pgvector/install-pgvector.sh:/docker-entrypoint-initdb.d/install-pgvector.sh:ro
+#    command: >
+#      bash -c "
+#      /docker-entrypoint-initdb.d/install-pgvector.sh &&
+#      docker-entrypoint.sh postgres
+#      "
+#
+#volumes:
+#  pgdata:
+#

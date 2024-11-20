@@ -40,7 +40,10 @@ Make sure you have the following installed:
 Make sure you have the following API keys:
 - **Llama cloud API key**
 
-Make sure you have access to LLM model and server. You can setup your own ollama server.
+Make sure you have access to LLM model and server. You can setup your own ollama server. To serve with your local ollama instance :
+```bash
+OLLAMA_HOST=0.0.0.0:11435 OLLAMA_MODELS=/usr/share/ollama/.ollama/models/ ollama serve
+```
 ---
 
 ### Setup and Installation

@@ -101,12 +101,16 @@ if __name__ == "__main__":
     # Initialize LlamaIndex
     Settings.llm = Ollama(base_url=url, model=LLM, request_timeout=240, system_prompt=system_prompt)
     
+    logger.warning("LLM ok")
+    
     # Embedding model
     Settings.embed_model = HuggingFaceEmbedding(
         model_name=EMBED_MODEL,
         trust_remote_code=True,
         cache_folder="cache"
     )
+    
+    logger.warning("Embedding model ok")
     
     # rebuild storage context
     storage_context = StorageContext.from_defaults(
