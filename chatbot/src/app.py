@@ -14,7 +14,6 @@ from llama_index.core import (
     Settings,
     VectorStoreIndex,
     SimpleDirectoryReader,
-    load_index_from_storage,
     StorageContext,
 )
 from llama_index.vector_stores.postgres import PGVectorStore
@@ -22,6 +21,7 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.memory import ChatMemoryBuffer
 from sqlalchemy import make_url
+import psycopg2
 
 
 import logging
@@ -45,6 +45,8 @@ PG_DB =                 os.environ.get("PG_DB", "katia_db")
 app = Flask(__name__)
 
 chat_engine = None
+vector_store = None
+memory = None
 
 # Index the data
 @app.route("/index")
@@ -72,22 +74,13 @@ def index():
         #file_extractor=file_extractor
     ).load_data()
     
-    url = make_url(connection_string)
-    vector_store = PGVectorStore.from_params(
-        database=db_name,
-        host=url.host,
-        password=url.password,
-        port=url.port,
-        user=url.username,
-        table_name="vector_store",
-        embed_dim=1024,  # openai embedding dimension
-        hnsw_kwargs={
-            "hnsw_m": 16,
-            "hnsw_ef_construction": 64,
-            "hnsw_ef_search": 40,
-            "hnsw_dist_method": "vector_cosine_ops"
-        },
-    )
+    logger.warning("PG_HOST : " + str(PG_HOST))
+    logger.warning("PG_PORT : " + str(PG_PORT))
+    logger.warning("PG_USER : " + str(PG_USER))
+    logger.warning("PG_PASSWORD : " + str(PG_PASSWORD))
+    logger.warning("DB_NAME : " + str(PG_DB))
+    
+    global vector_store
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     
@@ -95,7 +88,12 @@ def index():
         documents, storage_context=storage_context, show_progress=True, 
     )
     
-    chat_engine = index_base.as_chat_engine()
+    global chat_engine
+    
+    chat_engine = index_base.as_chat_engine(
+        chat_mode="context",
+        memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
+    )
     
     return jsonify({"message": "Indexing complete"})
 
@@ -106,6 +104,8 @@ def chat():
     
     logger.warning("Data : " + str(data["query"]))
     
+    global chat_engine
+    
     streaming_response = chat_engine.stream_chat(data["query"])
     
     # Use LlamaIndex to stream a response
@@ -114,13 +114,10 @@ def chat():
 # Home route to serve the frontend interface
 @app.route("/")
 def home():
-    logging.info("Rendering home page")
-    
-    
+    logging.info("Rendering home page")    
     return render_template("index.html")
 
-if __name__ == "__main__":
-    
+if __name__ == "__main__":    
     # Get system prompt from prompts/system_prompt
     with open("src/prompts/system_prompt.txt", "r") as f:
         system_prompt = f.read()    
@@ -145,13 +142,8 @@ if __name__ == "__main__":
     logger.warning("PG_USER : " + str(PG_USER))
     logger.warning("PG_PASSWORD : " + str(PG_PASSWORD))
     
-    # rebuild storage context from local storage
-    #storage_context = StorageContext.from_defaults(
-    #    persist_dir="src/storage"
-    #)
-    
-    connection_string = "postgresql://"+str(PG_USER)+":"+str(PG_PASSWORD)+"@"+str(PG_HOST)+":"+str(PG_PORT)
-    db_name = PG_DB
+    connection_string = "postgresql://postgres:password@"+str(PG_HOST)+":"+str(PG_PORT)
+    db_name = str(PG_DB)
     
     url = make_url(connection_string)
     vector_store = PGVectorStore.from_params(
