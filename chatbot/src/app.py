@@ -21,7 +21,6 @@ from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.memory import ChatMemoryBuffer
 from sqlalchemy import make_url
-import psycopg2
 
 
 import logging
@@ -74,25 +73,15 @@ def index():
         #file_extractor=file_extractor
     ).load_data()
     
-    logger.warning("PG_HOST : " + str(PG_HOST))
-    logger.warning("PG_PORT : " + str(PG_PORT))
-    logger.warning("PG_USER : " + str(PG_USER))
-    logger.warning("PG_PASSWORD : " + str(PG_PASSWORD))
-    logger.warning("DB_NAME : " + str(PG_DB))
-    
+    logger.warning("vector_store load")
     global vector_store
+    logger.warning("vector_store loaded : " + str(vector_store))
 
+    logger.warning("storage_context load")
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     
     index_base = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context, show_progress=True, 
-    )
-    
-    global chat_engine
-    
-    chat_engine = index_base.as_chat_engine(
-        chat_mode="context",
-        memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
     )
     
     return jsonify({"message": "Indexing complete"})
@@ -104,7 +93,17 @@ def chat():
     
     logger.warning("Data : " + str(data["query"]))
     
-    global chat_engine
+    memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
+    
+    # load index_base
+    index_base = VectorStoreIndex.from_vector_store(
+        vector_store=vector_store
+    )
+
+    chat_engine = index_base.as_chat_engine(
+        chat_mode="context",
+        memory = memory
+    )
     
     streaming_response = chat_engine.stream_chat(data["query"])
     
@@ -161,21 +160,5 @@ if __name__ == "__main__":
             "hnsw_dist_method": "vector_cosine_ops"
         },
     )
-    
-    try:
-        # load index_base
-        index_base = VectorStoreIndex.from_vector_store(
-            vector_store=vector_store
-        )
-    except Exception as e:
-        message = f"Error loading index: {str(e)}"
-        logging.error(message)
-    
-    memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
-    
-    chat_engine = index_base.as_chat_engine(
-        chat_mode="context",
-        memory = memory
-    )
-    
+
     app.run(debug=True, host="0.0.0.0", port=PORT)

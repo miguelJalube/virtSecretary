@@ -1,6 +1,6 @@
 python-dotenv
 flask>=2.0.2
-llama-index>=0.11.17
+llama-index-core>=0.12.2
 llama-index-llms-ollama>=0.3.4
 llama-index-embeddings-huggingface>=0.3.1
 llama-index-vector-stores-postgres
