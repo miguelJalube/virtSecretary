@@ -22,8 +22,13 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.memory import ChatMemoryBuffer
 from sqlalchemy import make_url
 
-
 import logging
+
+# Activate INFO level logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -54,8 +59,8 @@ def index():
     from llama_parse import LlamaParse
     
     # print content of current dir
-    logging.warning("List dir : ")
-    logging.warning(os.listdir())
+    logger.info("List dir : ")
+    logger.info(os.listdir())
     
     # set up parser
     parser = LlamaParse(
@@ -73,11 +78,11 @@ def index():
         #file_extractor=file_extractor
     ).load_data()
     
-    logger.warning("vector_store load")
+    logger.info("vector_store load")
     global vector_store
-    logger.warning("vector_store loaded : " + str(vector_store))
+    logger.info("vector_store loaded : " + str(vector_store))
 
-    logger.warning("storage_context load")
+    logger.info("storage_context load")
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     
     index_base = VectorStoreIndex.from_documents(
@@ -91,7 +96,7 @@ def index():
 def chat():
     data = request.get_json()
     
-    logger.warning("Data : " + str(data["query"]))
+    logger.info("Data : " + str(data["query"]))
     
     memory = ChatMemoryBuffer.from_defaults(llm=Settings.llm, token_limit=1500)
     
@@ -113,7 +118,7 @@ def chat():
 # Home route to serve the frontend interface
 @app.route("/")
 def home():
-    logging.info("Rendering home page")    
+    logger.info("Rendering home page")    
     return render_template("index.html")
 
 if __name__ == "__main__":    
@@ -135,11 +140,6 @@ if __name__ == "__main__":
         trust_remote_code=True,
         cache_folder="cache"
     )
-
-    logger.warning("PG_HOST : " + str(PG_HOST))
-    logger.warning("PG_PORT : " + str(PG_PORT))
-    logger.warning("PG_USER : " + str(PG_USER))
-    logger.warning("PG_PASSWORD : " + str(PG_PASSWORD))
     
     connection_string = "postgresql://postgres:password@"+str(PG_HOST)+":"+str(PG_PORT)
     db_name = str(PG_DB)
