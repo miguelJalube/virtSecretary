@@ -6,7 +6,13 @@ This application allows users to upload documents for indexing, which is used in
 
 Here's a demonstration of the chatbot :
 
-![Demo virtSecretary](https://youtu.be/FcHJpBrhvg0)
+<div style="position: relative; width: 100%; padding-bottom: 56.25%">
+<iframe src="https://youtu.be/FcHJpBrhvg0" 
+        title="VirtSecretary Demo" frameborder="0" allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        style="position: absolute; width: 100%; height: 100%;">
+</iframe>
+</div>
 
 ### Features
 - Upload documents for indexing.
