@@ -1,11 +1,7 @@
----
-
 ## Document Indexing Chatbot
 
 This application allows users to upload documents for indexing, which is used in a Retrieval-Augmented Generation (RAG) system powered by LlamaIndex and Ollama’s models.
-
-Here's a demonstration of the chatbot :
-https://youtu.be/FcHJpBrhvg0
+Here's a demonstration of the chatbot : https://youtu.be/FcHJpBrhvg0
 
 ### Features
 - Upload documents for indexing.
