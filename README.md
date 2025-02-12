@@ -2,7 +2,11 @@
 
 ## Document Indexing Chatbot with Progress Bar
 
-This application allows users to upload documents for indexing, which is used in a Retrieval-Augmented Generation (RAG) system powered by LlamaIndex and Ollama’s models. The progress of document indexing is displayed on a webpage using a progress bar.
+This application allows users to upload documents for indexing, which is used in a Retrieval-Augmented Generation (RAG) system powered by LlamaIndex and Ollama’s models.
+
+Here's a demonstration of the chatbot :
+
+![Demo virtSecretary](https://youtu.be/FcHJpBrhvg0)
 
 ### Features
 - Upload documents for indexing.
